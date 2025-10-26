@@ -110,7 +110,7 @@ app.get('/getTMCCount', async (req, res) => {
   console.log('🏥 GET /getTMCCount - Calling Tele MANAS API...');
   
   try {
-    const url = 'https://telemanas.mohfw.gov.in/TELEMANAS/rest/v0/getOrg/TMC';
+    const url = 'https://telemanas.mohfw.gov.in/TELEMANAS/rest/v0/getTMCcount/TMC';
     const response = await makeRequest(url);
     
     if (response.status === 200) {
