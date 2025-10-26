@@ -170,12 +170,10 @@ node examples/basic-scraper.js
 
 ## 📊 API Endpoints
 
-The mock API server provides the following simplified endpoints:
+The scraper API server provides the following live scraping endpoints:
 
-- `GET /getCallCount` - Get total calls count
-- `GET /getTMCcount` - Get TMC, MI, RCC counts
-- `POST /admin/updateData` - Update mock data
-- `GET /admin/data` - Get current mock data
+- `GET /getCallCount` - Get total calls count (live scraping)
+- `GET /getTMCcount` - Get TMC, MI, RCC counts (live scraping)
 - `GET /health` - Health check
 
 ## 🔄 Fallback Strategies

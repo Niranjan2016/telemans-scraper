@@ -1,9 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const TeleManasScraper = require('./scraper');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize scraper
+const scraper = new TeleManasScraper({
+  baseUrl: 'https://telemanas.mohfw.gov.in',
+  timeout: 15000,
+  maxRetries: 3,
+  enableLogging: true
+});
 
 // Middleware
 app.use(helmet());
@@ -12,34 +21,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-
-// Mock data - simulating real Tele MANAS data
-let mockData = {
-  totalCalls: "2821889",
-  teleManasCells: "53", 
-  mentoringInstitutes: "23",
-  regionalCoordinatingCenters: "5"
-};
-
-// Simulate data changes over time (for testing)
-function updateMockData() {
-  const now = new Date();
-  const hour = now.getHours();
-  
-  // Simulate slight variations based on time
-  const baseCalls = 2821889;
-  const variation = Math.floor(Math.random() * 1000) + (hour * 50);
-  
-  mockData = {
-    totalCalls: (baseCalls + variation).toString(),
-    teleManasCells: "53",
-    mentoringInstitutes: "23", 
-    regionalCoordinatingCenters: "5"
-  };
-}
-
-// Update data every 5 minutes
-setInterval(updateMockData, 5 * 60 * 1000);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -50,70 +31,78 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Mock the essential Tele MANAS API endpoints
-app.get('/getCallCount', (req, res) => {
-  console.log('📞 GET /getCallCount');
+// Scrape data using the scraper
+app.get('/getCallCount', async (req, res) => {
+  console.log('📞 GET /getCallCount - Running scraper...');
   
-  // Simulate some processing time
-  setTimeout(() => {
-    res.json({
-      Total_Calls: mockData.totalCalls
+  try {
+    const result = await scraper.scrape();
+    
+    if (result.success) {
+      console.log('✅ Scraping successful, returning data');
+      res.json({
+        Total_Calls: result.data.totalCalls
+      });
+    } else {
+      console.log('❌ Scraping failed, returning 0');
+      res.json({
+        Total_Calls: "0"
+      });
+    }
+  } catch (error) {
+    console.error('❌ Scraping error:', error.message);
+    res.status(500).json({
+      error: 'Scraping failed',
+      message: error.message,
+      Total_Calls: "0"
     });
-  }, Math.random() * 200 + 100); // 100-300ms delay
+  }
 });
 
-app.get('/getTMCcount', (req, res) => {
-  console.log('🏥 GET /getTMCcount');
+app.get('/getTMCcount', async (req, res) => {
+  console.log('🏥 GET /getTMCcount - Running scraper...');
   
-  // Simulate some processing time
-  setTimeout(() => {
-    res.json({
-      TMC: mockData.teleManasCells,
-      MI: mockData.mentoringInstitutes,
-      RCC: mockData.regionalCoordinatingCenters
+  try {
+    const result = await scraper.scrape();
+    
+    if (result.success) {
+      console.log('✅ Scraping successful, returning TMC data');
+      res.json({
+        TMC: result.data.teleManasCells,
+        MI: result.data.mentoringInstitutes,
+        RCC: result.data.regionalCoordinatingCenters
+      });
+    } else {
+      console.log('❌ Scraping failed, returning 0 values');
+      res.json({
+        TMC: "0",
+        MI: "0",
+        RCC: "0"
+      });
+    }
+  } catch (error) {
+    console.error('❌ Scraping error:', error.message);
+    res.status(500).json({
+      error: 'Scraping failed',
+      message: error.message,
+      TMC: "0",
+      MI: "0",
+      RCC: "0"
     });
-  }, Math.random() * 200 + 100); // 100-300ms delay
-});
-
-// Admin endpoint to update mock data
-app.post('/admin/updateData', (req, res) => {
-  console.log('🔧 POST /admin/updateData');
-  
-  const { totalCalls, teleManasCells, mentoringInstitutes, regionalCoordinatingCenters } = req.body;
-  
-  if (totalCalls) mockData.totalCalls = totalCalls.toString();
-  if (teleManasCells) mockData.teleManasCells = teleManasCells.toString();
-  if (mentoringInstitutes) mockData.mentoringInstitutes = mentoringInstitutes.toString();
-  if (regionalCoordinatingCenters) mockData.regionalCoordinatingCenters = regionalCoordinatingCenters.toString();
-  
-  res.json({
-    message: 'Mock data updated successfully',
-    data: mockData,
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Get current mock data
-app.get('/admin/data', (req, res) => {
-  res.json({
-    data: mockData,
-    timestamp: new Date().toISOString()
-  });
+  }
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Tele MANAS Mock API Server',
+    message: 'Tele MANAS Scraper API Server',
     version: '1.0.0',
     endpoints: {
-      'GET /getCallCount': 'Get total calls count',
-      'GET /getTMCcount': 'Get TMC, MI, RCC counts',
-      'POST /admin/updateData': 'Update mock data',
-      'GET /admin/data': 'Get current mock data',
+      'GET /getCallCount': 'Get total calls count (live scraping)',
+      'GET /getTMCcount': 'Get TMC, MI, RCC counts (live scraping)',
       'GET /health': 'Health check'
     },
-    currentData: mockData
+    description: 'This server runs live scraping against Tele MANAS APIs'
   });
 });
 
@@ -139,20 +128,18 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 Tele MANAS Mock API Server Started');
+  console.log('🚀 Tele MANAS Scraper API Server Started');
   console.log(`📍 Server running on http://localhost:${PORT}`);
   console.log('📋 Available endpoints:');
-  console.log('   GET  /getCallCount');
-  console.log('   GET  /getTMCcount');
-  console.log('   POST /admin/updateData');
-  console.log('   GET  /admin/data');
+  console.log('   GET  /getCallCount (live scraping)');
+  console.log('   GET  /getTMCcount (live scraping)');
   console.log('   GET  /health');
   console.log('');
   console.log('🧪 Test the API:');
   console.log(`   curl http://localhost:${PORT}/getCallCount`);
   console.log(`   curl http://localhost:${PORT}/getTMCcount`);
   console.log('');
-  console.log('📊 Current mock data:', mockData);
+  console.log('⚠️  Note: This server runs live scraping against Tele MANAS APIs');
 });
 
 // Graceful shutdown

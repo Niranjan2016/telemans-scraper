@@ -65,26 +65,8 @@ async function testGetTMCcount() {
 
 async function testUpdateData() {
   console.log('\n🔧 Testing Data Update...');
-  try {
-    const updateData = {
-      totalCalls: "3000000",
-      teleManasCells: "60",
-      mentoringInstitutes: "25",
-      regionalCoordinatingCenters: "6"
-    };
-    
-    const response = await makeRequest(`${BASE_URL}/admin/updateData`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updateData)
-    });
-    
-    console.log('✅ Data Update Response:', response.data);
-  } catch (error) {
-    console.log('❌ Data Update Failed:', error.message);
-  }
+  console.log('⚠️  Data update endpoint removed - server now uses live scraping');
+  console.log('✅ No action needed - data is scraped live from Tele MANAS APIs');
 }
 
 // Main test function
@@ -99,10 +81,8 @@ async function runTests() {
   console.log('\n' + '='.repeat(50));
   console.log('✅ All tests completed!');
   console.log('\n📋 Available endpoints:');
-  console.log('   GET  /getCallCount');
-  console.log('   GET  /getTMCcount');
-  console.log('   POST /admin/updateData');
-  console.log('   GET  /admin/data');
+  console.log('   GET  /getCallCount (live scraping)');
+  console.log('   GET  /getTMCcount (live scraping)');
   console.log('   GET  /health');
 }
 
