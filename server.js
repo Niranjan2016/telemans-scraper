@@ -1,93 +1,130 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const TeleManasScraper = require('./scraper');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize scraper
-const scraper = new TeleManasScraper({
-  baseUrl: 'https://telemanas.mohfw.gov.in',
-  timeout: 15000,
-  maxRetries: 3,
-  enableLogging: true
-});
-
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: ['https://telemanas.mohfw.gov.in', 'http://localhost:3000', 'http://localhost:8787'],
-  credentials: true
-}));
 app.use(express.json());
+
+// Disable SSL certificate verification for development
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+// Common headers for both API calls
+const commonHeaders = {
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Connection': 'keep-alive',
+  'Content-Type': 'application/json',
+  'Cookie': '_gcl_au=1.1.1553982654.1761285178',
+  'Referer': 'https://telemanas.mohfw.gov.in/telemanas-dashboard/',
+  'Sec-Fetch-Dest': 'empty',
+  'Sec-Fetch-Mode': 'cors',
+  'Sec-Fetch-Site': 'same-origin',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+  'sec-ch-ua': '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"'
+};
+
+// Helper function to make HTTPS requests
+function makeRequest(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const requestOptions = {
+      method: 'GET',
+      headers: { ...commonHeaders, ...headers },
+      timeout: 10000
+    };
+
+    const req = https.request(url, requestOptions, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const jsonData = JSON.parse(data);
+          resolve({
+            status: res.statusCode,
+            data: jsonData
+          });
+        } catch (error) {
+          resolve({
+            status: res.statusCode,
+            data: data
+          });
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
+    req.end();
+  });
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    service: 'Tele MANAS Mock API'
+    service: 'Tele MANAS API Proxy'
   });
 });
 
-// Scrape data using the scraper
+// Get call count endpoint
 app.get('/getCallCount', async (req, res) => {
-  console.log('📞 GET /getCallCount - Running scraper...');
+  console.log('📞 GET /getCallCount - Calling Tele MANAS API...');
   
   try {
-    const result = await scraper.scrape();
+    const url = 'https://telemanas.mohfw.gov.in/TELEMANAS/rest/v0/getCallCount';
+    const response = await makeRequest(url);
     
-    if (result.success) {
-      console.log('✅ Scraping successful, returning data');
-      res.json({
-        Total_Calls: result.data.totalCalls
-      });
+    if (response.status === 200) {
+      console.log('✅ getCallCount successful');
+      res.json(response.data);
     } else {
-      console.log('❌ Scraping failed, returning 0');
-      res.json({
-        Total_Calls: "0"
-      });
+      console.log(`❌ getCallCount failed with status: ${response.status}`);
+      res.status(response.status).json(response.data);
     }
   } catch (error) {
-    console.error('❌ Scraping error:', error.message);
+    console.error('❌ getCallCount error:', error.message);
     res.status(500).json({
-      error: 'Scraping failed',
-      message: error.message,
-      Total_Calls: "0"
+      error: 'Failed to fetch call count',
+      message: error.message
     });
   }
 });
 
-app.get('/getTMCcount', async (req, res) => {
-  console.log('🏥 GET /getTMCcount - Running scraper...');
+// Get TMC count endpoint
+app.get('/getTMCCount', async (req, res) => {
+  console.log('🏥 GET /getTMCCount - Calling Tele MANAS API...');
   
   try {
-    const result = await scraper.scrape();
+    const url = 'https://telemanas.mohfw.gov.in/TELEMANAS/rest/v0/getOrg/TMC';
+    const response = await makeRequest(url);
     
-    if (result.success) {
-      console.log('✅ Scraping successful, returning TMC data');
-      res.json({
-        TMC: result.data.teleManasCells,
-        MI: result.data.mentoringInstitutes,
-        RCC: result.data.regionalCoordinatingCenters
-      });
+    if (response.status === 200) {
+      console.log('✅ getTMCCount successful');
+      res.json(response.data);
     } else {
-      console.log('❌ Scraping failed, returning 0 values');
-      res.json({
-        TMC: "0",
-        MI: "0",
-        RCC: "0"
-      });
+      console.log(`❌ getTMCCount failed with status: ${response.status}`);
+      res.status(response.status).json(response.data);
     }
   } catch (error) {
-    console.error('❌ Scraping error:', error.message);
+    console.error('❌ getTMCCount error:', error.message);
     res.status(500).json({
-      error: 'Scraping failed',
-      message: error.message,
-      TMC: "0",
-      MI: "0",
-      RCC: "0"
+      error: 'Failed to fetch TMC count',
+      message: error.message
     });
   }
 });
@@ -95,14 +132,14 @@ app.get('/getTMCcount', async (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Tele MANAS Scraper API Server',
+    message: 'Tele MANAS API Proxy',
     version: '1.0.0',
     endpoints: {
-      'GET /getCallCount': 'Get total calls count (live scraping)',
-      'GET /getTMCcount': 'Get TMC, MI, RCC counts (live scraping)',
+      'GET /getCallCount': 'Get total calls count from Tele MANAS API',
+      'GET /getTMCCount': 'Get TMC organization data from Tele MANAS API',
       'GET /health': 'Health check'
     },
-    description: 'This server runs live scraping against Tele MANAS APIs'
+    description: 'Simple proxy server that forwards requests to Tele MANAS APIs'
   });
 });
 
@@ -128,18 +165,16 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log('🚀 Tele MANAS Scraper API Server Started');
+  console.log('🚀 Tele MANAS API Proxy Started');
   console.log(`📍 Server running on http://localhost:${PORT}`);
   console.log('📋 Available endpoints:');
-  console.log('   GET  /getCallCount (live scraping)');
-  console.log('   GET  /getTMCcount (live scraping)');
+  console.log('   GET  /getCallCount');
+  console.log('   GET  /getTMCCount');
   console.log('   GET  /health');
   console.log('');
   console.log('🧪 Test the API:');
   console.log(`   curl http://localhost:${PORT}/getCallCount`);
-  console.log(`   curl http://localhost:${PORT}/getTMCcount`);
-  console.log('');
-  console.log('⚠️  Note: This server runs live scraping against Tele MANAS APIs');
+  console.log(`   curl http://localhost:${PORT}/getTMCCount`);
 });
 
 // Graceful shutdown
