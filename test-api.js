@@ -45,7 +45,7 @@ async function testHealthCheck() {
 async function testGetCallCount() {
   console.log('\n📞 Testing getCallCount API...');
   try {
-    const response = await makeRequest(`${BASE_URL}/TELEMANAS/rest/v0/getCallCount`);
+    const response = await makeRequest(`${BASE_URL}/getCallCount`);
     console.log('✅ getCallCount Response:', response.data);
   } catch (error) {
     console.log('❌ getCallCount Failed:', error.message);
@@ -55,32 +55,13 @@ async function testGetCallCount() {
 async function testGetTMCcount() {
   console.log('\n🏥 Testing getTMCcount API...');
   try {
-    const response = await makeRequest(`${BASE_URL}/TELEMANAS/rest/v0/getTMCcount/TMC`);
+    const response = await makeRequest(`${BASE_URL}/getTMCcount`);
     console.log('✅ getTMCcount Response:', response.data);
   } catch (error) {
     console.log('❌ getTMCcount Failed:', error.message);
   }
 }
 
-async function testGetDashboardData() {
-  console.log('\n📊 Testing getDashboardData API...');
-  try {
-    const response = await makeRequest(`${BASE_URL}/TELEMANAS/rest/v0/getDashboardData`);
-    console.log('✅ getDashboardData Response:', response.data);
-  } catch (error) {
-    console.log('❌ getDashboardData Failed:', error.message);
-  }
-}
-
-async function testErrorSimulation() {
-  console.log('\n❌ Testing Error Simulation...');
-  try {
-    const response = await makeRequest(`${BASE_URL}/TELEMANAS/rest/v0/simulateError`);
-    console.log('✅ Error Simulation Response:', response.data);
-  } catch (error) {
-    console.log('❌ Error Simulation Failed:', error.message);
-  }
-}
 
 async function testUpdateData() {
   console.log('\n🔧 Testing Data Update...');
@@ -109,21 +90,17 @@ async function testUpdateData() {
 // Main test function
 async function runTests() {
   console.log('🚀 Starting Tele MANAS Mock API Tests\n');
-  console.log('=' * 50);
+  console.log('='.repeat(50));
   
   await testHealthCheck();
   await testGetCallCount();
   await testGetTMCcount();
-  await testGetDashboardData();
-  await testErrorSimulation();
   
-  console.log('\n' + '=' * 50);
+  console.log('\n' + '='.repeat(50));
   console.log('✅ All tests completed!');
   console.log('\n📋 Available endpoints:');
-  console.log('   GET  /TELEMANAS/rest/v0/getCallCount');
-  console.log('   GET  /TELEMANAS/rest/v0/getTMCcount/TMC');
-  console.log('   GET  /TELEMANAS/rest/v0/getDashboardData');
-  console.log('   GET  /TELEMANAS/rest/v0/simulateError');
+  console.log('   GET  /getCallCount');
+  console.log('   GET  /getTMCcount');
   console.log('   POST /admin/updateData');
   console.log('   GET  /admin/data');
   console.log('   GET  /health');
@@ -139,8 +116,6 @@ module.exports = {
   testHealthCheck,
   testGetCallCount,
   testGetTMCcount,
-  testGetDashboardData,
-  testErrorSimulation,
   testUpdateData,
   runTests
 };

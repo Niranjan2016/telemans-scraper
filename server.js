@@ -50,9 +50,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Mock the exact Tele MANAS API endpoints
-app.get('/TELEMANAS/rest/v0/getCallCount', (req, res) => {
-  console.log('📞 GET /TELEMANAS/rest/v0/getCallCount');
+// Mock the essential Tele MANAS API endpoints
+app.get('/getCallCount', (req, res) => {
+  console.log('📞 GET /getCallCount');
   
   // Simulate some processing time
   setTimeout(() => {
@@ -62,8 +62,8 @@ app.get('/TELEMANAS/rest/v0/getCallCount', (req, res) => {
   }, Math.random() * 200 + 100); // 100-300ms delay
 });
 
-app.get('/TELEMANAS/rest/v0/getTMCcount/TMC', (req, res) => {
-  console.log('🏥 GET /TELEMANAS/rest/v0/getTMCcount/TMC');
+app.get('/getTMCcount', (req, res) => {
+  console.log('🏥 GET /getTMCcount');
   
   // Simulate some processing time
   setTimeout(() => {
@@ -73,39 +73,6 @@ app.get('/TELEMANAS/rest/v0/getTMCcount/TMC', (req, res) => {
       RCC: mockData.regionalCoordinatingCenters
     });
   }, Math.random() * 200 + 100); // 100-300ms delay
-});
-
-// Additional endpoints that might exist
-app.get('/TELEMANAS/rest/v0/getDashboardData', (req, res) => {
-  console.log('📊 GET /TELEMANAS/rest/v0/getDashboardData');
-  
-  setTimeout(() => {
-    res.json({
-      totalCalls: mockData.totalCalls,
-      teleManasCells: mockData.teleManasCells,
-      mentoringInstitutes: mockData.mentoringInstitutes,
-      regionalCoordinatingCenters: mockData.regionalCoordinatingCenters,
-      lastUpdated: new Date().toISOString()
-    });
-  }, Math.random() * 300 + 150);
-});
-
-// Error simulation endpoint (for testing error handling)
-app.get('/TELEMANAS/rest/v0/simulateError', (req, res) => {
-  console.log('❌ GET /TELEMANAS/rest/v0/simulateError');
-  
-  const errorTypes = [
-    { status: 500, message: 'Internal Server Error' },
-    { status: 503, message: 'Service Unavailable' },
-    { status: 429, message: 'Too Many Requests' },
-    { status: 403, message: 'Forbidden' }
-  ];
-  
-  const randomError = errorTypes[Math.floor(Math.random() * errorTypes.length)];
-  res.status(randomError.status).json({
-    error: randomError.message,
-    timestamp: new Date().toISOString()
-  });
 });
 
 // Admin endpoint to update mock data
@@ -140,10 +107,8 @@ app.get('/', (req, res) => {
     message: 'Tele MANAS Mock API Server',
     version: '1.0.0',
     endpoints: {
-      'GET /TELEMANAS/rest/v0/getCallCount': 'Get total calls count',
-      'GET /TELEMANAS/rest/v0/getTMCcount/TMC': 'Get TMC, MI, RCC counts',
-      'GET /TELEMANAS/rest/v0/getDashboardData': 'Get all dashboard data',
-      'GET /TELEMANAS/rest/v0/simulateError': 'Simulate API errors',
+      'GET /getCallCount': 'Get total calls count',
+      'GET /getTMCcount': 'Get TMC, MI, RCC counts',
       'POST /admin/updateData': 'Update mock data',
       'GET /admin/data': 'Get current mock data',
       'GET /health': 'Health check'
@@ -177,17 +142,15 @@ app.listen(PORT, () => {
   console.log('🚀 Tele MANAS Mock API Server Started');
   console.log(`📍 Server running on http://localhost:${PORT}`);
   console.log('📋 Available endpoints:');
-  console.log('   GET  /TELEMANAS/rest/v0/getCallCount');
-  console.log('   GET  /TELEMANAS/rest/v0/getTMCcount/TMC');
-  console.log('   GET  /TELEMANAS/rest/v0/getDashboardData');
-  console.log('   GET  /TELEMANAS/rest/v0/simulateError');
+  console.log('   GET  /getCallCount');
+  console.log('   GET  /getTMCcount');
   console.log('   POST /admin/updateData');
   console.log('   GET  /admin/data');
   console.log('   GET  /health');
   console.log('');
   console.log('🧪 Test the API:');
-  console.log(`   curl http://localhost:${PORT}/TELEMANAS/rest/v0/getCallCount`);
-  console.log(`   curl http://localhost:${PORT}/TELEMANAS/rest/v0/getTMCcount/TMC`);
+  console.log(`   curl http://localhost:${PORT}/getCallCount`);
+  console.log(`   curl http://localhost:${PORT}/getTMCcount`);
   console.log('');
   console.log('📊 Current mock data:', mockData);
 });
